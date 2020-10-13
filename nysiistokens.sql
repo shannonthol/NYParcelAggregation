@@ -30,3 +30,8 @@ group by
   nysiistokens
 order by 
   numuuids desc
+  
+  
+--code to retrieve the number of nysiis tokens that are greater than 3 characters in length
+select numuuids, nysiistokens from tnc_ny_parcels.rps_stdown_nysiistokens where length(nysiistokens)>3 order by numuuids desc
+--returns 94400 records, the first 14 of which are present in nysiis codes for more than 10,000 records (numuuids>10000)
