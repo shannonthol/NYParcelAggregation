@@ -1,3 +1,7 @@
+##This code accomplishes the standardization of owner names and mailing address for NY RPS centroids available from the NY State GIS Clearinghouse
+##http://gis.ny.gov/gisdata/fileserver/?DSID=1300&file=NYS-Tax-Parcel-Centroid-Points.gdb.zip
+##A precursor step not documented on GitHub is required to load the data into a PostGres database with PostGIS extension
+
 #load libraries
 import psycopg2
 import re
