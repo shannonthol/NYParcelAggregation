@@ -1,0 +1,9 @@
+
+
+
+
+--select sets that have a standardized owner name but no standardized mailing address (these records were excluded from the step 6 aggregation query)
+select setid, sum_acres, std_owner, std_addr
+from tnc_ny_parcels.rps_stdown_stdaddr_set 
+where std_owner != '' and std_addr = ''
+--returns 777,759 records
