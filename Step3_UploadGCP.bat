@@ -1,4 +1,7 @@
---This code (step 3) loads the batch csv files into our Google Cloud Platform Bucket
+--This code (step 3) loads the batch csv files into our Google Cloud Platform Bucket using gsutil called through a bat file.  Run via two sub-steps:
+--1. In Command Prompt, navigate to directory where the bat file is saved
+--2. Run bat using: filename.bat
+
 
 call gsutil cp C:\Users\shannon.thol\Documents\ArcGIS\Projects\ParcelAggregation\NonadjacentAggregation\dev\BigQuery\rpscentroids_batch1.csv gs://tnc-eny-bucket01/rpscentroids
 call gsutil cp C:\Users\shannon.thol\Documents\ArcGIS\Projects\ParcelAggregation\NonadjacentAggregation\dev\BigQuery\rpscentroids_batch2.csv gs://tnc-eny-bucket01/rpscentroids
