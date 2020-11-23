@@ -1,3 +1,4 @@
+#load libraries
 import psycopg2
 import re
 from scourgify import normalize_address_record
@@ -13,8 +14,7 @@ connection = psycopg2.connect(user = 'postgres',
 #create a cursor object that lets us execute postgres commands through python console
 cursor = connection.cursor()
 
-#define query for reading in owner name and address data - limit to only records that are larger than 1 acre in size and have
-#a total assessed value less than 2* the land assessed value
+#define query for reading in all owner name and address data from the statewide RPS centroids
 readData = "select id, primary_owner, mail_addr, po_box, mail_city, mail_state, mail_zip, add_owner, add_mail_addr,\
             add_mail_po_box, add_mail_city, add_mail_state, add_mail_zip, owner_type, geom\
             from parcels.rpscentroids\
@@ -26,15 +26,16 @@ cursor.execute(readData)
 readTable = cursor.fetchall()
 
 #loop through records in readTable creating a dictionary of results
-
 readDict = dict() #readDict = {id: [primary_owner, mail_addr, po_box, mail_city, mail_state, mail_zip, add_owner,
                     #add_mail_addr, add_mail_po_box, add_mail_city, add_mail_state, add_mail_zip, owner_type, geom]}
 
 for row in readTable:
     currList = []
     for i in range(14):
+        #replace no data with a blank
         if row[i+1] is None:
             currList.insert(i,'')
+        #replace white space with a blank
         elif row[i+1].replace(" ","") == "":
             currList.insert(i,'')
         else:
@@ -44,22 +45,22 @@ for row in readTable:
 # create dictionary of standardized names and addresses
 stdDict = dict() #stdDict = {id: [prim_owner, prim_addr, sec_owner, sec_addr, id]}
 
+#iterate through the results in the readDict created above
 for currId in readDict: #readDict = {id: [primary_owner, mail_addr, po_box, mail_city, mail_state, mail_zip, add_owner,
                     #add_mail_addr, add_mail_po_box, add_mail_city, add_mail_state, add_mail_zip, owner_type]}
     currOwnType = readDict[currId][12]
     #if the currOwnType is unknown (value -999) proceed with writing blanks for std_owner and std_addr in the stdDict
     if currOwnType == '-999':
-        ####COME BACK TO THIS!!!!!!!!!!!!!!!!
         stdDict[currId] = ['','','','',currId] #stdDict = {id: [prim_owner, prim_addr, sec_owner, sec_addr, id]}
         
-    #else if the currOwnType is not unknown, proceed with creating standardized owner names and addresses
+    #else if the currOwnType is not unknown, proceed with creating standardized owner names and mailing addresses
     else:
         #get current primary owner name and use it to create standardized primary owner name
         currOwn = readDict[currId][0].upper() 
         if currOwn == '':
             stdOwn = ''
         else:
-            #REPLACE most non-alphanumeric characters with blanks or appropriate stringS
+            #REPLACE most non-alphanumeric characters with blanks or appropriate strings
             #RETAIN # and $ as is
             stdOwn = re.sub(' +', ' ',currOwn.replace('@', ' at ').replace('&', ' and ').replace(',',' ').replace('.',' ').
                             replace(';',' ').replace(':',' ').replace('<',' ').replace('>',' ').replace('!',' ').replace('^',' ').
@@ -73,7 +74,7 @@ for currId in readDict: #readDict = {id: [primary_owner, mail_addr, po_box, mail
         if currSecOwn == '':
             stdSecOwn = ''
         else:
-            #REPLACE most non-alphanumeric characters with blanks or appropriate stringS
+            #REPLACE most non-alphanumeric characters with blanks or appropriate strings
             #RETAIN # and $ as is
             stdSecOwn = re.sub(' +', ' ',currSecOwn.replace('@', ' at ').replace('&', ' and ').replace(',',' ').replace('.',' ').
                             replace(';',' ').replace(':',' ').replace('<',' ').replace('>',' ').replace('!',' ').replace('^',' ').
@@ -97,6 +98,7 @@ for currId in readDict: #readDict = {id: [primary_owner, mail_addr, po_box, mail
             
             #create a concatenated string for the current address
             concatAddr = re.sub(' +', ' ',currAddr + ' ' + currCity + ' ' + currState + ' ' + currZip).strip() 
+            #if the concatenated address is blank, record the standardized address as a blank
             if concatAddr == '':
                 stdAdd = ''
             
@@ -207,7 +209,7 @@ for currId in readDict: #readDict = {id: [primary_owner, mail_addr, po_box, mail
                 
         #add current ID and standardized owner and address data to the stdDict          
         stdDict[currId] = [stdOwn, stdAdd, stdSecOwn, stdSecAdd, currId] 
-        #stdDict = {id: [prim_owner, prim_addr, sec_owner, sec_addr, currId]}   
+        #stdDict = {id: [prim_owner, prim_addr, sec_owner, sec_addr, currId]}          
         
 #define an update query for the standardized owner and address data
 updateSql = """UPDATE parcels.rpscentroids
@@ -217,17 +219,19 @@ updateSql = """UPDATE parcels.rpscentroids
                     std_add_addr = %s
                 WHERE id = %s
                 """
-#iterate through ids in the stdDict
+
+#iterate through ids in the stdDict, running the update query on each in turn
 for currId in stdDict: #stdDict = {id: [prim_owner, prim_addr, sec_owner, sec_addr]}  
         #retrieve update list from the stdDict #upList = [prim_owner, prim_addr, sec_owner, sec_addr, id]
         upList = stdDict[currId]
         #execute update query for current id
         cursor.execute(updateSql, upList)
-print('done with db updates')
-
+        
 #commit changes to db
 connection.commit()
 
 #close cursor and db connection
 cursor.close()
 connection.close()
+print('done with db updates')
+
