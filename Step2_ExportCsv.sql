@@ -1,4 +1,7 @@
---This code (step 2) exports batches of RPS centroid data from the PostGres database into csv files with geography represented as text
+--This code (step 2) exports batches of RPS centroid data from the PostGres database into csv files with geography represented as text.  Run via three sub-steps:
+--1. In Command Prompt, navigate to directory where the sql file is saved
+--2. Connect to psql using: psql postgre postgres (database is named postgres and password is postgres); enter postgres at password prompt
+--3. Run sql using: \i filename.sql
 
 \copy (select *, st_astext(st_geogfromtext(st_astext(st_transform(geom,4326)))) as geog_wkt from parcels.rpscentroids order by id offset 0 rows fetch first 250000 rows only) to C:\Users\shannon.thol\Documents\ArcGIS\Projects\ParcelAggregation\NonadjacentAggregation\dev\BigQuery\rpscentroids_batch1.csv WITH DELIMITER '|' CSV HEADER;
 \copy (select *, st_astext(st_geogfromtext(st_astext(st_transform(geom,4326)))) as geog_wkt from parcels.rpscentroids order by id offset 250000 rows fetch first 250000 rows only) to C:\Users\shannon.thol\Documents\ArcGIS\Projects\ParcelAggregation\NonadjacentAggregation\dev\BigQuery\rpscentroids_batch2.csv WITH DELIMITER '|' CSV HEADER;
