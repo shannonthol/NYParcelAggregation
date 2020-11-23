@@ -1,2 +1,2 @@
-# parcelaggregation
-Statewide parcel aggregation efforts
+# NYParcelAggregation
+Statewide parcel aggregation efforts.
